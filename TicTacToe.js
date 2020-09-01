@@ -8,35 +8,30 @@ class  Game{
     if (player.event){
       if (i.innerHTML == ''){
         i.innerHTML = player.sign;
+        player.moves = player.moves + 1
         this.Board.playTurn(player)
-
+        this.check_winner(player);
+        player.turn = false;
+        this.Draw(player)
+      }
     }
   }
-}
 
   play(i){
-    try{
-    if (this.player1.turn){
-      this.add_sign(this.player1, i);
-      i.classList.add("xx");
-      this.player1.turn = false;
-      this.player2.turn = true;
-      this.player1.moves = this.player1.moves + 1
-      this.check_winner(this.player1);
+    if (i.innerHTML === ""){
+      if (this.player1.turn){
+        this.add_sign(this.player1, i);
+        i.classList.add("xx");
+        this.player2.turn = true;
     }
-    else if (this.player2.turn){
-      this.add_sign(this.player2, i)
-      i.classList.add("oo");
-      this.player2.turn= false;
-      this.player1.turn= true;
-      this.player2.moves = this.player2.moves + 1
-      this.check_winner(this.player2);
+      else if (this.player2.turn){
+        this.add_sign(this.player2, i)
+        i.classList.add("oo");
+        this.player1.turn= true;
     }
   }
-  catch (e){
-    throw e
   }
-  }
+
 
   check_winner(player){
     if (player.moves >= 3){
@@ -50,7 +45,7 @@ class  Game{
       let h1=0
       let h2=0
       let h3=0
-      p.forEach( (i) =>{
+      for (let i of Array.from(p)){
         if (count === 4 ){
           count = 1
           row = 0
@@ -59,10 +54,10 @@ class  Game{
         if (i.innerHTML === player.sign){
           row = row +1
           }
-        if ((index===0 || index === 4 || index === 6) && i.innerHTML === player.sign){
+        if ((index===0 || index === 4 || index === 8) && i.innerHTML === player.sign){
           cross =  cross +1
         }
-        if ((index===2 || index === 4 || index === 8) && i.innerHTML === player.sign){
+        if ((index===2 || index === 4 || index === 6) && i.innerHTML === player.sign){
           cross_o = cross_o +1
         }
       if (i.innerHTML === player.sign && ind === 0){
@@ -77,18 +72,19 @@ class  Game{
       }
 
       if (row >=  3 || cross >= 3 || h1 >= 3 || h2 >= 3|| h3 >=  3 || cross_o >= 3){
-        this.Winner(player.sign);
+        this.Board.show_winner(player)
+        this.Winner();
         this.Board.Add_new_score(player);
-        throw "for each breaker"
+        break
       }
+
         count++;
         index++;
         ind++;
-      })
+      }
     }
 
   }
-
   AddEvents(){
     let c = document.querySelectorAll(".cube");
     c.forEach( (i) => {
@@ -96,43 +92,71 @@ class  Game{
     } )
   }
 
-  Winner(player){
+  Winner(){
     this.player1.event = false;
     this.player2.event = false;
-    this.Board.show_winner(player)
+    setTimeout(() => {this.start_Over()} , 2500)
+    }
 
-  }
-}
+    start_Over(){
+      this.Board.Reset()
+      this.player1.event = true;
+      this.player2.event = true;
+      this.AddEvents()
+    }
 
+    Draw(player){
+      if (player.moves >= 4){
+        let p = document.querySelectorAll(".cube");
+        let boxes_filled =0;
+        for (let i of Array.from(p) ){
+          if (i.innerHTML !== ""){
+            boxes_filled++
+        }
+        console.log(boxes_filled)
+      }
+      if (boxes_filled === 9){
+        this.Winner();
+        this.Board.show_winner()
+      }
+    }
+  }}
 
 
 class GameBoard{
   constructor(){
     this.zero = "0 - 0"
+    this.main = document.querySelector(".main");
   }
   make_borad(){
-    let board = document.querySelector(".main");
     for (let i=1; i<=9; i++){
       let cube = document.createElement("div");
       if (i % 3 === 0){
         cube.classList.add("end");
       }
       cube.classList.add("cube");
-      board.append(cube);
+      this.main.append(cube);
     }
-
   }
   Destroy_board(){
     let c = document.querySelectorAll(".cube")
     c.forEach( (i) => {
-      this.Board.removeChild(i);
+      this.main.removeChild(i);
     })
   }
 
   Reset(){
     this.Destroy_board()
     this.make_borad()
+    this.newTurn()
   }
+
+  newTurn(){
+    let n = document.querySelector("#current_play");
+    n.innerHTML = "X's turn";
+    n.style.backgroundColor = "#E88834";
+  }
+
   playTurn(player){
     let n = document.querySelector("#current_play");
     if (player.sign === "x"){
@@ -144,10 +168,22 @@ class GameBoard{
       n.style.backgroundColor = "#E88834";
     }
   }
-  show_winner(player){
+
+  show_winner(player="draw"){
     let n = document.querySelector("#current_play");
-    n.innerHTML = ` ${player} has won`
+    if (player.sign === "x"){
+      n.style.backgroundColor = "#E88834";
+      n.innerHTML =` ${player.sign} has won`
+    }
+    else if(player === "draw"){
+      n.innerHTML =`It was a draw`
+    }
+    else {
+      n.style.backgroundColor = "#02BAC4";
+      n.innerHTML =` ${player.sign} has won`
+    }
   }
+
   Add_new_score(player){
     let score = document.querySelector("#score");
     if (player.sign === "x"){
@@ -156,17 +192,17 @@ class GameBoard{
       let y = this.zero.replace(this.zero[0], String(p))
       score.innerHTML = y;
       this.zero = y
-      console.log(y)
     }
-    else{
-        let p =   Number(zero[4])
+    else if (player.sign === "x"){
+        let p =   Number(this.zero[4])
         p++
-        let y = this.zero.replace(zero[4], String(p))
+        let y = this.zero.replace(this.zero[4], String(p))
         score.innerHTML = y
         this.zero = y
       }
     }
   }
+
 
 class Player{
   constructor(sign,moves=0){
@@ -175,6 +211,7 @@ class Player{
     this.turn = false;
     this.event = true
   }
+
 }
 
 
